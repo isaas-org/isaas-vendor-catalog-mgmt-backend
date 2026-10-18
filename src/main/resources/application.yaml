@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: vendor-catalog-mgmt-backend
+  datasource:
+    # Local default matches isaas-database's docker-compose (seeded with db/seeds).
+    # For Neon, use the pooled host in JDBC form:
+    #   jdbc:postgresql://<host>-pooler.<region>.aws.neon.tech/<db>?sslmode=require
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:55432/isaas_dev}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # The schema is owned and migrated by isaas-database. Never let Hibernate change it.
+      ddl-auto: none
+
+server:
+  port: ${PORT:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
