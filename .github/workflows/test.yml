@@ -9,25 +9,51 @@ permissions:
   contents: read
 
 jobs:
+  # Fails fast with a clear message if the CI database secrets are missing,
+  # instead of letting the Postgres service container fail to start in `build`.
+  check-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI database secrets
+        env:
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_DATABASE_USERNAME: ${{ secrets.CI_DATABASE_USERNAME }}
+          CI_DATABASE_PASSWORD: ${{ secrets.CI_DATABASE_PASSWORD }}
+        run: |
+          missing=""
+          [ -n "$CI_DATABASE_URL" ] || missing="$missing CI_DATABASE_URL"
+          [ -n "$CI_DATABASE_USERNAME" ] || missing="$missing CI_DATABASE_USERNAME"
+          [ -n "$CI_DATABASE_PASSWORD" ] || missing="$missing CI_DATABASE_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing secrets:$missing. Set them as organization or repository secrets (Secrets and variables -> Actions)."
+            exit 1
+          fi
+          case "$CI_DATABASE_URL" in
+            */isaas_test|*/isaas_test\?*) ;;
+            *) echo "::error::CI_DATABASE_URL must point at database isaas_test, e.g. jdbc:postgresql://localhost:5432/isaas_test"; exit 1 ;;
+          esac
+
   build:
+    needs: check-config
     runs-on: ubuntu-latest
     services:
       # The context-load test opens a real JDBC connection; an empty database is enough.
       postgres:
         image: postgres:18
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ${{ secrets.CI_DATABASE_USERNAME }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DATABASE_PASSWORD }}
           POSTGRES_DB: isaas_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd pg_isready
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: jdbc:postgresql://localhost:5432/isaas_test
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: postgres
+      DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+      DATABASE_USERNAME: ${{ secrets.CI_DATABASE_USERNAME }}
+      DATABASE_PASSWORD: ${{ secrets.CI_DATABASE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 

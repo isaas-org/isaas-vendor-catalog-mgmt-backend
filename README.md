@@ -46,3 +46,13 @@ The defaults below are the **local development configuration**: they point at th
 ```
 
 The context-load test needs a reachable Postgres at `DATABASE_URL`. CI (`.github/workflows/test.yml`) provides one as a `postgres:18` service container on every PR and every push to `feature/**`.
+
+CI reads that database's connection details from three GitHub Actions secrets. They are set as organization secrets on `isaas-org` (Organization settings -> Secrets and variables -> Actions); a repository secret with the same name would override them. A `check-config` job fails with a clear message if any are missing.
+
+| Secret | Value |
+|--------|-------|
+| `CI_DATABASE_URL` | `jdbc:postgresql://localhost:5432/isaas_test` (the database name must be `isaas_test`) |
+| `CI_DATABASE_USERNAME` | any username, used to create the throwaway database |
+| `CI_DATABASE_PASSWORD` | any password, used to create the throwaway database |
+
+Secrets aren't passed to workflows run from forks, so PRs from forks fail `check-config`. To test a fork contribution, a maintainer pushes it to a branch in this repo.
