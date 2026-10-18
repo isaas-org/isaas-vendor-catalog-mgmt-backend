@@ -28,7 +28,9 @@ curl localhost:8082/actuator/health
 
 ## Configuration
 
-| Variable | Default | Notes |
+The defaults below are the **local development configuration**: they point at the docker Postgres started from `isaas-database` (`postgres`/`postgres` on port 55432). They are not production settings. In any deployed environment (Neon), set `DATABASE_URL`, `DATABASE_USERNAME` and `DATABASE_PASSWORD` explicitly from that environment's secrets.
+
+| Variable | Local default | Notes |
 |----------|---------|-------|
 | `DATABASE_URL` | `jdbc:postgresql://localhost:55432/isaas_dev` | JDBC form. For Neon use the pooled host with `?sslmode=require` |
 | `DATABASE_USERNAME` | `postgres` | |
