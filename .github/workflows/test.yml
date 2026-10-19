@@ -37,7 +37,7 @@ jobs:
     needs: check-config
     runs-on: ubuntu-latest
     services:
-      # The context-load test opens a real JDBC connection; an empty database is enough.
+      # Integration tests run against the real schema, migrated from isaas-database below.
       postgres:
         image: postgres:18
         env:
@@ -56,6 +56,28 @@ jobs:
       DATABASE_PASSWORD: ${{ secrets.CI_DATABASE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
+
+      # The schema is owned by isaas-database (public); apply its migrations so the
+      # tests exercise the real enums, constraints and triggers.
+      - name: Check out isaas-database
+        uses: actions/checkout@v4
+        with:
+          repository: isaas-org/isaas-database
+          ref: main
+          path: isaas-database
+
+      - name: Apply the database schema
+        env:
+          DBMATE_VERSION: v2.36.0
+          DB_USER: ${{ secrets.CI_DATABASE_USERNAME }}
+          DB_PASSWORD: ${{ secrets.CI_DATABASE_PASSWORD }}
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/dbmate \
+            "https://github.com/amacneil/dbmate/releases/download/${DBMATE_VERSION}/dbmate-linux-amd64"
+          sudo chmod +x /usr/local/bin/dbmate
+          password=$(python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["DB_PASSWORD"], safe=""))')
+          dbmate --url "postgres://${DB_USER}:${password}@localhost:5432/isaas_test?sslmode=disable" \
+            --migrations-dir isaas-database/db/migrations --no-dump-schema up
 
       - uses: actions/setup-java@v4
         with:
