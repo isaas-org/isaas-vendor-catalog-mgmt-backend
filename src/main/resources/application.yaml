@@ -8,6 +8,17 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:55432/isaas_dev}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Auth0 dev tenant (isaas-auth0-config). The trailing slash is part of
+          # Auth0's issuer and must match the token's iss claim exactly.
+          issuer-uri: ${AUTH0_ISSUER_URI:https://isaas-dev.us.auth0.com/}
+          audiences: ${AUTH0_AUDIENCE:https://api.isaas/vendor}
+  mvc:
+    problemdetails:
+      enabled: true
   jpa:
     open-in-view: false
     hibernate:
